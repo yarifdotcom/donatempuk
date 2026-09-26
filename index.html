@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Donat Ceria — Kasir Donat Online</title>
+  <meta name="description" content="Pesan donat box isi 12, 6, dan 2 dengan topping Vanila, Coklat, Matcha, Strowberi, Red Velvet, dan Oreo. Pesan langsung via WhatsApp.">
+  <meta name="theme-color" content="#FF4F86">
+  <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ============ TOPBAR ============ -->
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="#top" aria-label="Donat Ceria beranda">
+      <img src="assets/img/logo.svg" alt="" width="44" height="44">
+      <span>Donat <b>Ceria</b></span>
+    </a>
+    <nav class="nav" aria-label="Navigasi utama">
+      <a href="#kasir">Kasir</a>
+      <a href="#topping">Topping</a>
+      <a href="#cara">Cara Pesan</a>
+    </nav>
+    <button class="cart-btn" id="openCart" aria-label="Buka keranjang">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20.5" r="1.3"/><circle cx="17" cy="20.5" r="1.3"/></svg>
+      <span>Keranjang</span>
+      <em class="badge" id="cartBadge">0</em>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="sprinkle-bg" aria-hidden="true"></div>
+    <div class="wrap hero-in">
+      <div class="hero-copy">
+        <span class="pill">Fresh dibuat setiap hari</span>
+        <h1>Donat lembut,<br><span class="hl">topping</span> penuh warna!</h1>
+        <p>Pilih box, atur sendiri toppingnya atau biar kami yang campur. Pesan langsung lewat WhatsApp — gampang, cepat, ceria.</p>
+        <div class="hero-cta">
+          <a href="#kasir" class="btn btn-primary btn-lg">Mulai Pesan</a>
+          <a href="#topping" class="btn btn-ghost btn-lg">Lihat Topping</a>
+        </div>
+        <ul class="hero-stats">
+          <li><b>6</b><span>pilihan topping</span></li>
+          <li><b>3</b><span>ukuran box</span></li>
+          <li><b>9K</b><span>mulai dari</span></li>
+        </ul>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="blob b1"></div><div class="blob b2"></div>
+        <div class="hero-box" id="heroBox"></div>
+        <img class="float f1" src="assets/img/donut-strowberi.svg" alt="">
+        <img class="float f2" src="assets/img/donut-matcha.svg" alt="">
+        <img class="float f3" src="assets/img/donut-coklat.svg" alt="">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ POS / KASIR ============ -->
+  <section class="pos" id="kasir">
+    <div class="wrap pos-in">
+      <div class="pos-main">
+        <div class="sec-head">
+          <div>
+            <span class="eyebrow">Kasir Donat</span>
+            <h2>Pilih paket box</h2>
+          </div>
+          <p class="muted">Klik box untuk mulai memesan</p>
+        </div>
+
+        <div class="products" id="products">
+          <button class="product p-pink" data-pkg="12">
+            <span class="tag">Paling hemat</span>
+            <div class="product-art" data-art="12"></div>
+            <div class="product-info">
+              <div>
+                <h3>Isi 12</h3>
+                <p>3 baris × 4 kolom</p>
+              </div>
+              <div class="price">34<small>K</small></div>
+            </div>
+            <span class="add">+ Pilih</span>
+          </button>
+          <button class="product p-teal" data-pkg="6">
+            <div class="product-art" data-art="6"></div>
+            <div class="product-info">
+              <div>
+                <h3>Isi 6</h3>
+                <p>2 baris × 3 kolom</p>
+              </div>
+              <div class="price">17<small>K</small></div>
+            </div>
+            <span class="add">+ Pilih</span>
+          </button>
+          <button class="product p-sun" data-pkg="2">
+            <div class="product-art" data-art="2"></div>
+            <div class="product-info">
+              <div>
+                <h3>Isi 2</h3>
+                <p>1 baris × 2 kolom</p>
+              </div>
+              <div class="price">9<small>K</small></div>
+            </div>
+            <span class="add">+ Pilih</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Keranjang (panel kasir) -->
+      <aside class="cart" id="cart" aria-label="Keranjang">
+        <div class="cart-head">
+          <h2>Keranjang</h2>
+          <button class="icon-btn cart-close" id="closeCart" aria-label="Tutup keranjang">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <div class="cart-list" id="cartList"></div>
+        <div class="cart-foot">
+          <div class="row"><span>Total box</span><b id="cartBoxes">0 box · 0 pcs</b></div>
+          <div class="row total"><span>Total</span><b id="cartTotal">Rp 0</b></div>
+          <p class="note">*Harga belum termasuk ongkir</p>
+          <button class="btn btn-primary btn-block" id="checkoutBtn" disabled>Checkout</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ TOPPING ============ -->
+  <section class="toppings" id="topping">
+    <div class="wrap">
+      <div class="sec-head center">
+        <div>
+          <span class="eyebrow">Menu Topping</span>
+          <h2>6 rasa favorit</h2>
+        </div>
+      </div>
+      <div class="top-grid" id="topGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ CARA PESAN ============ -->
+  <section class="how" id="cara">
+    <div class="wrap">
+      <div class="sec-head center">
+        <div>
+          <span class="eyebrow">Cara Pesan</span>
+          <h2>4 langkah, donat meluncur</h2>
+        </div>
+      </div>
+      <ol class="steps">
+        <li><b>1</b><h3>Pilih box</h3><p>Isi 12, 6, atau 2 sesuai kebutuhan.</p></li>
+        <li><b>2</b><h3>Campur / Atur</h3><p>Biar kami campur, atau atur topping sendiri per box.</p></li>
+        <li><b>3</b><h3>Checkout</h3><p>Isi nama, nomor HP, dan alamat pengiriman.</p></li>
+        <li><b>4</b><h3>Kirim WA</h3><p>Detail pesanan terkirim otomatis ke WhatsApp kami.</p></li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-in">
+    <div class="brand"><img src="assets/img/logo.svg" alt="" width="36" height="36"><span>Donat <b>Ceria</b></span></div>
+    <p>Harga belum termasuk ongkir. &copy; <span id="year"></span> Donat Ceria.</p>
+    <a href="admin.html" class="admin-link">Admin</a>
+  </div>
+</footer>
+
+<!-- Bar keranjang mobile -->
+<div class="mbar" id="mbar">
+  <div><small id="mbarCount">0 box</small><b id="mbarTotal">Rp 0</b></div>
+  <button class="btn btn-primary" id="mbarBtn">Lihat Keranjang</button>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<!-- ============ MODAL 1: Campur / Atur sendiri ============ -->
+<div class="modal" id="mMode" role="dialog" aria-modal="true" aria-labelledby="mModeTitle" hidden>
+  <div class="modal-card sm">
+    <button class="icon-btn modal-x" data-close aria-label="Tutup">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="mode-head">
+      <div class="mode-art" id="modeArt"></div>
+      <div>
+        <span class="eyebrow">Box pilihanmu</span>
+        <h3 id="mModeTitle">Box Isi 12</h3>
+        <p class="price-line" id="modePrice">Rp 34.000 / box</p>
+      </div>
+    </div>
+    <p class="label">Mau isi seperti apa?</p>
+    <div class="mode-opts">
+      <label class="opt">
+        <input type="radio" name="mode" value="campur" checked>
+        <span class="opt-card">
+          <span class="opt-ic ic-mix"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></span>
+          <b>Campur</b>
+          <small>Aneka topping, kami yang pilihkan</small>
+        </span>
+      </label>
+      <label class="opt">
+        <input type="radio" name="mode" value="atur">
+        <span class="opt-card">
+          <span class="opt-ic ic-set"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>
+          <b>Atur Sendiri</b>
+          <small>Pilih topping &amp; jumlahnya</small>
+        </span>
+      </label>
+    </div>
+    <div class="qty-row">
+      <label for="boxQty" class="label">Jumlah box (pcs)</label>
+      <div class="stepper">
+        <button type="button" class="step" data-step="-1" aria-label="Kurangi">−</button>
+        <input id="boxQty" type="number" min="1" max="50" value="1" inputmode="numeric">
+        <button type="button" class="step" data-step="1" aria-label="Tambah">+</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="sub"><small>Subtotal</small><b id="modeSubtotal">Rp 34.000</b></div>
+      <button class="btn btn-primary" id="modeNext">Masukkan Keranjang</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL 2: Atur sendiri ============ -->
+<div class="modal" id="mAtur" role="dialog" aria-modal="true" aria-labelledby="mAturTitle" hidden>
+  <div class="modal-card lg">
+    <button class="icon-btn modal-x" data-close aria-label="Tutup">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="atur-top">
+      <div>
+        <span class="eyebrow">Atur sendiri</span>
+        <h3 id="mAturTitle">Box Isi 12</h3>
+      </div>
+      <div class="box-tabs" id="boxTabs" role="tablist" aria-label="Pilih box"></div>
+    </div>
+    <div class="atur-body">
+      <div class="atur-preview">
+        <div class="live-box" id="liveBox"></div>
+        <div class="fill-meter">
+          <div class="bar"><i id="fillBar"></i></div>
+          <span id="fillText">0 / 12 terisi</span>
+        </div>
+        <div class="atur-actions">
+          <button class="btn btn-mix" id="btnMix">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+            <span id="btnMixText">Campur</span>
+          </button>
+          <button class="btn btn-ghost" id="btnReset">Kosongkan</button>
+        </div>
+      </div>
+      <div class="atur-list">
+        <p class="label">Checklist topping &amp; jumlah</p>
+        <div class="mix-note" id="mixNote" hidden>
+          <p><b>Box ini diisi Campur.</b> Topping dipilihkan acak. Klik <em>Atur manual</em> untuk memilih sendiri.</p>
+          <button class="btn btn-sm btn-ghost" id="btnManual">Atur manual</button>
+        </div>
+        <ul class="tlist" id="tList"></ul>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="sub"><small id="aturStatus">Lengkapi semua box</small><b id="aturSubtotal">Rp 0</b></div>
+      <div class="foot-btns">
+        <button class="btn btn-ghost" id="prevBox">Box sebelumnya</button>
+        <button class="btn btn-ghost" id="nextBox">Box berikutnya</button>
+        <button class="btn btn-primary" id="aturAdd" disabled>Masukkan Keranjang</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL 3: Checkout ============ -->
+<div class="modal" id="mCheckout" role="dialog" aria-modal="true" aria-labelledby="mCoTitle" hidden>
+  <div class="modal-card md">
+    <button class="icon-btn modal-x" data-close aria-label="Tutup">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <span class="eyebrow">Checkout</span>
+    <h3 id="mCoTitle">Data pengiriman</h3>
+    <form id="coForm" class="co-grid" novalidate>
+      <div class="co-fields">
+        <label class="field"><span>Nama lengkap *</span>
+          <input name="name" required maxlength="80" autocomplete="name" placeholder="cth. Siti Aminah"></label>
+        <label class="field"><span>No. telepon / WhatsApp *</span>
+          <input name="phone" required maxlength="20" inputmode="tel" autocomplete="tel" placeholder="cth. 0812xxxxxxxx"></label>
+        <label class="field"><span>Alamat pengiriman *</span>
+          <textarea name="address" required rows="3" maxlength="300" autocomplete="street-address" placeholder="Jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota"></textarea></label>
+        <label class="field"><span>Catatan (opsional)</span>
+          <input name="note" maxlength="150" placeholder="cth. kirim jam 4 sore"></label>
+        <p class="form-err" id="coErr" role="alert"></p>
+      </div>
+      <div class="co-sum">
+        <p class="label">Ringkasan pesanan</p>
+        <ul class="sum-list" id="coSum"></ul>
+        <div class="row total"><span>Total harga</span><b id="coTotal">Rp 0</b></div>
+        <p class="note">*Harga belum termasuk ongkir. Ongkir dikonfirmasi admin via WhatsApp.</p>
+        <button class="btn btn-primary btn-block" type="submit">Proses Pesanan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL 4: Review & kirim WA ============ -->
+<div class="modal" id="mReview" role="dialog" aria-modal="true" aria-labelledby="mRvTitle" hidden>
+  <div class="modal-card md">
+    <button class="icon-btn modal-x" data-close aria-label="Tutup">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="rv-hero">
+      <div class="ok-ic"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></div>
+      <div>
+        <span class="eyebrow">Review pesanan</span>
+        <h3 id="mRvTitle">Pesanan #—</h3>
+      </div>
+    </div>
+    <div class="rv-body" id="rvBody"></div>
+    <div class="rv-link">
+      <input id="rvLink" readonly aria-label="Link review pesanan">
+      <button class="btn btn-sm btn-ghost" id="copyLink">Salin</button>
+    </div>
+    <div class="modal-foot">
+      <a class="btn btn-ghost" id="rvOpen" target="_blank" rel="noopener">Lihat halaman review</a>
+      <a class="btn btn-wa" id="rvWa" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.1 5.1 0 0 0 1.1 2.7 11.7 11.7 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
+        Kirim ke WhatsApp
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/donut.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
