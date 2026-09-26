@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Pesanan — Donat Empuk</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body class="page-order">
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="index.html"><img src="assets/img/logo.svg" alt="" width="44" height="44"><span data-brand="split">Donat <b>Empuk</b></span></a>
+    <a class="btn btn-sm btn-primary" href="index.html" style="margin-left:auto">Pesan lagi</a>
+  </div>
+</header>
+
+<main class="wrap receipt-wrap">
+  <article class="receipt" id="receipt">
+    <div class="loading">Memuat pesanan…</div>
+  </article>
+</main>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/donut.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+(function () {
+  var DA = window.DonutArt, S = window.Store, CFG = window.APP_CONFIG;
+  var el = document.getElementById('receipt');
+  var q = new URLSearchParams(location.search);
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var STATUS = { baru: 'Pesanan baru', diproses: 'Sedang diproses', dikirim: 'Dalam pengiriman', selesai: 'Selesai', batal: 'Dibatalkan' };
+
+  function render(o) {
+    var d = new Date(o.createdAt);
+    var dstr = isNaN(d) ? '' : d.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' });
+    var boxes = o.items.map(function (it) {
+      var fills = it.mode === 'campur' ? DA.randomFills(it.pkg, it.seed) : DA.fillsFromCounts(it.pkg, it.counts);
+      return '<div class="r-item">' +
+        '<div class="r-art">' + DA.box(it.pkg, fills, { seed: it.seed }) + '<span class="r-qty">×' + it.qty + '</span></div>' +
+        '<div class="r-info"><h3>Box ' + DA.PACKAGES[it.pkg].name + '</h3>' +
+        '<span class="chip ' + (it.mode === 'campur' ? 'chip-mix' : 'chip-set') + '">' + (it.mode === 'campur' ? 'Campur' : 'Atur sendiri') + '</span>' +
+        '<p>' + esc(S.itemDetail(it)) + '</p>' +
+        '<div class="r-price"><span>' + it.qty + ' × ' + S.fmt(DA.PACKAGES[it.pkg].price) + '</span><b>' + S.fmt(S.itemPrice(it)) + '</b></div></div></div>';
+    }).join('');
+    var link = location.href;
+    el.innerHTML =
+      '<div class="r-head">' +
+        '<div><span class="eyebrow">Review Pesanan</span><h1>#' + esc(o.id) + '</h1><p class="muted">' + esc(dstr) + '</p></div>' +
+        '<span class="status st-' + esc(o.status || 'baru') + '">' + esc(STATUS[o.status] || STATUS.baru) + '</span>' +
+      '</div>' +
+      '<dl class="rv-cust">' +
+        '<div><dt>Nama</dt><dd>' + esc(o.name) + '</dd></div>' +
+        '<div><dt>No. HP</dt><dd>' + esc(o.phone) + '</dd></div>' +
+        '<div class="w"><dt>Alamat pengiriman</dt><dd>' + esc(o.address) + '</dd></div>' +
+        (o.note ? '<div class="w"><dt>Catatan</dt><dd>' + esc(o.note) + '</dd></div>' : '') +
+      '</dl>' +
+      '<div class="r-items">' + boxes + '</div>' +
+      '<div class="r-total">' +
+        '<div class="row"><span>Jumlah</span><b>' + S.totalBox(o.items) + ' box · ' + S.totalPcs(o.items) + ' pcs</b></div>' +
+        '<div class="row total"><span>Total harga</span><b>' + S.fmt(o.total) + '</b></div>' +
+        '<p class="note">*Harga belum termasuk ongkir. Ongkir akan dikonfirmasi admin via WhatsApp.</p>' +
+      '</div>' +
+      '<div class="r-actions">' +
+        '<a class="btn btn-wa" target="_blank" rel="noopener" href="' + esc(S.waLink(o, link)) + '">Kirim / tanya via WhatsApp</a>' +
+        '<button class="btn btn-ghost" onclick="window.print()">Cetak / simpan PDF</button>' +
+      '</div>';
+    document.title = 'Pesanan #' + o.id + ' — ' + (CFG.STORE_NAME || 'Donat Empuk');
+  }
+
+  function fail(msg) {
+    el.innerHTML = '<div class="empty-state"><img src="assets/img/box-empty.svg" alt="" width="220"><h1>Pesanan tidak ditemukan</h1><p class="muted">' + esc(msg) + '</p><a class="btn btn-primary" href="index.html">Kembali ke toko</a></div>';
+  }
+
+  var order = null, qid = q.get('id');
+  // Cek database SQLite: jika admin sudah commit database.sql, status terbaru ikut tampil
+  S.ready().then(function () {
+    try { if (q.get('d')) order = S.decode(q.get('d')); } catch (e) { order = null; }
+    var fromDb = S.getOrder(qid || (order && order.id));
+    if (fromDb) order = fromDb;
+    if (order) render(order); else fail('Link pesanan tidak valid atau sudah rusak.');
+  });
+})();
+</script>
+</body>
+</html>

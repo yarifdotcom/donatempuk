@@ -3,9 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Donat Ceria — Kasir Donat Online</title>
+  <title>Donat Empuk — Kasir Donat Online</title>
   <meta name="description" content="Pesan donat box isi 12, 6, dan 2 dengan topping Vanila, Coklat, Matcha, Strowberi, Red Velvet, dan Oreo. Pesan langsung via WhatsApp.">
   <meta name="theme-color" content="#FF4F86">
+  <link rel="canonical" href="https://yarifdotcom.github.io/donatempuk/">
+  <meta property="og:title" content="Donat Empuk — Kasir Donat Online">
+  <meta property="og:url" content="https://yarifdotcom.github.io/donatempuk/">
+  <meta property="og:image" content="https://yarifdotcom.github.io/donatempuk/assets/img/box-12.svg">
   <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,9 +21,9 @@
 <!-- ============ TOPBAR ============ -->
 <header class="topbar">
   <div class="wrap topbar-in">
-    <a class="brand" href="#top" aria-label="Donat Ceria beranda">
+    <a class="brand" href="#top" aria-label="Beranda">
       <img src="assets/img/logo.svg" alt="" width="44" height="44">
-      <span>Donat <b>Ceria</b></span>
+      <span data-brand="split">Donat <b>Empuk</b></span>
     </a>
     <nav class="nav" aria-label="Navigasi utama">
       <a href="#kasir">Kasir</a>
@@ -42,7 +46,7 @@
       <div class="hero-copy">
         <span class="pill">Fresh dibuat setiap hari</span>
         <h1>Donat lembut,<br><span class="hl">topping</span> penuh warna!</h1>
-        <p>Pilih box, atur sendiri toppingnya atau biar kami yang campur. Pesan langsung lewat WhatsApp — gampang, cepat, ceria.</p>
+        <p>Pilih box, atur sendiri toppingnya atau biar kami yang campur. Pesan langsung lewat WhatsApp — gampang, cepat, empuk.</p>
         <div class="hero-cta">
           <a href="#kasir" class="btn btn-primary btn-lg">Mulai Pesan</a>
           <a href="#topping" class="btn btn-ghost btn-lg">Lihat Topping</a>
@@ -50,7 +54,7 @@
         <ul class="hero-stats">
           <li><b>6</b><span>pilihan topping</span></li>
           <li><b>3</b><span>ukuran box</span></li>
-          <li><b>9K</b><span>mulai dari</span></li>
+          <li><b id="minPrice">9K</b><span>mulai dari</span></li>
         </ul>
       </div>
       <div class="hero-art" aria-hidden="true">
@@ -166,8 +170,8 @@
 
 <footer class="footer">
   <div class="wrap footer-in">
-    <div class="brand"><img src="assets/img/logo.svg" alt="" width="36" height="36"><span>Donat <b>Ceria</b></span></div>
-    <p>Harga belum termasuk ongkir. &copy; <span id="year"></span> Donat Ceria.</p>
+    <div class="brand"><img src="assets/img/logo.svg" alt="" width="36" height="36"><span data-brand="split">Donat <b>Empuk</b></span></div>
+    <p>Harga belum termasuk ongkir. &copy; <span id="year"></span> <span data-brand>Donat Empuk</span>.</p>
     <a href="admin.html" class="admin-link">Admin</a>
   </div>
 </footer>
@@ -338,6 +342,7 @@
 
 <script src="assets/js/config.js"></script>
 <script src="assets/js/donut.js"></script>
+<script src="assets/js/db.js"></script>
 <script src="assets/js/store.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
