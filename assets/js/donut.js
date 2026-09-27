@@ -297,10 +297,13 @@
   // Isi acak (campur)
   function randomFills(pkgId, seed) {
     var cap = PACKAGES[pkgId].rows * PACKAGES[pkgId].cols, r = rng(seed || Date.now()), out = [];
+    // hanya topping yang tersedia (jika semua habis, pakai semua)
+    var pool = ORDER.filter(function (k) { return TOPPINGS[k].available !== false; });
+    if (!pool.length) pool = ORDER.slice();
     // pastikan variasi: putar semua rasa dulu lalu acak
-    var base = ORDER.slice();
+    var base = pool.slice();
     for (var i = base.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)); var t = base[i]; base[i] = base[j]; base[j] = t; }
-    for (var k = 0; k < cap; k++) out.push(k < base.length ? base[k] : ORDER[Math.floor(r() * ORDER.length)]);
+    for (var k = 0; k < cap; k++) out.push(k < base.length ? base[k] : pool[Math.floor(r() * pool.length)]);
     for (var x = out.length - 1; x > 0; x--) { var y = Math.floor(r() * (x + 1)); var tt = out[x]; out[x] = out[y]; out[y] = tt; }
     return out;
   }

@@ -28,7 +28,7 @@
 
 <script src="assets/js/config.js"></script>
 <script src="assets/js/donut.js"></script>
-<script src="assets/js/db.js"></script>
+<script src="assets/js/firebase.js"></script>
 <script src="assets/js/store.js"></script>
 <script>
 (function () {
@@ -80,12 +80,14 @@
   }
 
   var order = null, qid = q.get('id');
-  // Cek database SQLite: jika admin sudah commit database.sql, status terbaru ikut tampil
+  // Data utama dari link (selalu bisa dibuka), lalu status terbaru dari Firebase jika tersedia
   S.ready().then(function () {
     try { if (q.get('d')) order = S.decode(q.get('d')); } catch (e) { order = null; }
-    var fromDb = S.getOrder(qid || (order && order.id));
-    if (fromDb) order = fromDb;
-    if (order) render(order); else fail('Link pesanan tidak valid atau sudah rusak.');
+    if (order) render(order);
+    return S.getOrder(qid || (order && order.id));
+  }).then(function (fresh) {
+    if (fresh) render(Object.assign({}, order || {}, fresh));
+    else if (!order) fail('Link pesanan tidak valid atau sudah rusak.');
   });
 })();
 </script>

@@ -1,0 +1,60 @@
+rules_version = '2';
+// =========================================================
+//  Donat Empuk — Firestore Security Rules  (login email admin)
+//  Pasang di: Firebase Console > Firestore Database > Rules > Publish
+// =========================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admin = login Firebase Authentication dengan salah satu email ini.
+    // Daftar ini WAJIB sama dengan ADMIN_EMAILS di assets/js/config.js.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email.lower() in [
+          'yarifdotcom@gmail.com',
+          'fatmaberliandina@gmail.com'
+        ];
+    }
+
+    function validItems(items) {
+      return items is list && items.size() >= 1 && items.size() <= 100;
+    }
+
+    // Pesanan baru dari pelanggan (tanpa login) — divalidasi bentuknya
+    function validNewOrder(id) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['id','createdAt','name','phone','address','note','items','total','totalBox','totalPcs','status','source','updatedAt'])
+        && d.id == id
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 80
+        && d.phone is string && d.phone.size() >= 8 && d.phone.size() <= 20
+        && d.address is string && d.address.size() >= 10 && d.address.size() <= 300
+        && (!('note' in d) || (d.note is string && d.note.size() <= 150))
+        && d.createdAt is string && d.createdAt.size() <= 40
+        && validItems(d.items)
+        && d.total is int && d.total >= 0 && d.total <= 100000000
+        && d.status == 'baru';
+    }
+
+    // ---- Pesanan ----
+    match /orders/{orderId} {
+      allow get: if true;                                   // halaman review pesanan (buka per ID)
+      allow list: if isAdmin();                             // daftar pesanan hanya admin
+      allow create: if isAdmin() || validNewOrder(orderId);
+      allow update, delete: if isAdmin();                   // ubah status / hapus
+    }
+
+    // ---- Pengaturan toko (harga & ketersediaan) ----
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['packages','toppings','updatedAt'])
+        && request.resource.data.packages is map
+        && request.resource.data.toppings is map;
+    }
+
+    // Tolak semua koleksi lain
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

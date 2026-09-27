@@ -2,57 +2,78 @@
 
 Website one page untuk jualan donat: kasir (POS) box isi 12 / 6 / 2, popup **Campur** atau **Atur Sendiri** dengan visual box donat isometrik yang terisi live, keranjang, checkout ke WhatsApp, halaman review pesanan publik, dan admin berpassword.
 
-**100% statis — jalan di GitHub Pages tanpa hosting.** Database memakai **SQLite langsung di browser** (sql.js) yang dibaca dari file `data/database.sql`.
+**Statis di GitHub Pages + database Firebase (Cloud Firestore).** Tidak perlu hosting/PHP.
 
 Alamat: https://yarifdotcom.github.io/donatempuk/
 
 ## Isi folder
 
 ```
-index.html            Halaman utama (kasir / POS)
-order.html            Review pesanan publik (link yang dikirim ke WA)
-admin.html            Admin view
-data/database.sql     DATABASE SQLite (teks SQL) — dibaca langsung oleh website
-data/database.sqlite  Versi biner dari database yang sama (opsional)
-assets/js/config.js   <- SEMUA PENGATURAN GLOBAL
-assets/js/db.js       Mesin SQLite di browser (sql.js dari CDN)
-assets/js/donut.js    Renderer vektor donat & box isometrik (SVG)
-assets/js/store.js    Format pesanan, link review, pesan WA
-assets/js/app.js      Logika kasir
-assets/js/admin.js    Logika admin
-assets/img/           Aset vektor SVG
+index.html              Halaman utama (kasir / POS)
+order.html              Review pesanan publik (link yang dikirim ke WA)
+admin.html              Admin: pesanan, ubah status, pengaturan harga & topping
+firestore.rules         Aturan keamanan Firestore (admin = login email terdaftar)
+assets/js/config.js     <- SEMUA PENGATURAN GLOBAL + konfigurasi Firebase
+assets/js/firebase.js   Koneksi Firestore
+assets/js/store.js      Pesanan, pengaturan, cadangan lokal, link review, pesan WA
+assets/js/app.js        Logika kasir
+assets/js/admin.js      Logika admin
+assets/js/donut.js      Renderer vektor donat & box isometrik (SVG)
+assets/img/             Aset vektor SVG
 ```
 
 ## Pengaturan global (`assets/js/config.js`)
 
 | Variabel | Nilai | Fungsi |
 |---|---|---|
-| `STORE_NAME` | `Donat Empuk` | Nama brand di semua halaman, box, pesan WA |
+| `STORE_NAME` | `Donat Empuk` | Nama brand |
 | `SITE_URL` | `https://yarifdotcom.github.io/donatempuk/` | Root website untuk link review di WA |
 | `WA_NUMBER` | `6285645719632` | Nomor WA tujuan checkout |
 | `ORDER_PREFIX` | `DE` | Awalan nomor pesanan |
-| `ADMIN_PASSWORD` | `111` | Password admin.html |
-| `DB_FILE` | `data/database.sql` | File database (`.sql` atau `.sqlite`) |
-| `SQLJS_VERSION` | `1.10.3` | Versi sql.js dari CDN |
+| `ADMIN_EMAILS` | `yarifdotcom@gmail.com`, `fatmaberliandina@gmail.com` | Email admin (login Firebase Authentication) |
+| `ADMIN_PASSWORD` | `111` | Password cadangan, hanya saat Firebase mati (membuka data lokal) |
+| `FIREBASE_CONFIG` | project `donatempuk` | Konfigurasi web app Firebase |
+| `FIREBASE_SDK_VERSION` | `12.19.0` | Versi SDK dari gstatic |
+| `FIREBASE_TIMEOUT_MS` | `8000` | Batas tunggu sebelum pakai cadangan |
+| `ADMIN_LIST_LIMIT` | `200` | Jumlah pesanan yang dibaca admin (hemat kuota) |
 
-## Pasang di GitHub Pages
+## Setup Firebase (sekali saja)
 
-1. Buat repo **`donatempuk`** di akun `yarifdotcom`.
-2. Upload semua isi folder ini ke root repo.
-3. **Settings → Pages** → Source: branch `main`, folder `/ (root)` → Save.
-4. Buka https://yarifdotcom.github.io/donatempuk/
+1. Firebase Console → **Build → Firestore Database → Create database** (lokasi `asia-southeast2`, mode *production*).
+2. **Build → Authentication → Get started → Email/Password → Enable**.
+3. Tab **Users → Add user** untuk tiap admin: `yarifdotcom@gmail.com`, `fatmaberliandina@gmail.com` (password min. 6 karakter).
+4. Firestore → tab **Rules** → tempel isi `firestore.rules` → **Publish**.
+5. Buka `admin.html` → login email + password → tab **Pengaturan** → **Simpan ke Firebase**.
 
-## Cara kerja database
+Koleksi dibuat otomatis, tidak perlu membuat tabel manual:
 
-- Saat halaman dibuka, browser mengunduh `data/database.sql` lalu menjalankannya di SQLite (sql.js).
-- **Harga, nama paket, dan nama topping diambil dari database.** Ubah `price` di tabel `packages`, commit, dan harga di website langsung berubah.
-- GitHub Pages **hanya bisa dibaca**, tidak bisa ditulis dari browser. Jadi:
-  1. Pelanggan checkout → detail pesanan terkirim ke WA toko beserta link review.
-  2. Admin buka `admin.html` → **Impor pesanan dari link review WhatsApp** (tempel link dari WA) → pesanan masuk ke database di browser admin. Ubah status sesuai progres.
-  3. Klik **Download database.sql**, ganti file `data/database.sql` di repo dengan hasil download, lalu commit (bisa lewat tombol *Upload files* di GitHub).
-  4. Setelah commit, semua perangkat admin melihat data yang sama, dan **pelanggan bisa melihat status terbaru** di halaman review pesanannya.
-  5. Klik **Sudah commit, muat ulang dari file** untuk membersihkan perubahan lokal.
-- Mau pakai file biner? Klik **Download .sqlite**, simpan sebagai `data/database.sqlite`, dan ubah `DB_FILE` di config.
-- Jika CDN sql.js tidak bisa dimuat (offline), website tetap jalan dan pesanan disimpan sementara di localStorage.
+```
+settings/store
+  packages: { "12": {name, price, available}, "6": {...}, "2": {...} }
+  toppings: { vanila: {name, available}, coklat, matcha, strowberi, redvelvet, oreo }
+  updatedAt
 
-> Catatan keamanan: di GitHub Pages semua file publik. Password admin dan `database.sql` (berisi nama, no. HP, alamat pelanggan) bisa dibaca siapa pun yang tahu alamatnya. Jika data pelanggan perlu dirahasiakan, jangan commit data pesanan ke repo publik — simpan hasil download database di komputer admin saja.
+orders/{DE260927-XXXX}
+  id, createdAt, name, phone, address, note,
+  items: [ {pkg:"12", mode:"campur"|"atur", qty, counts:{coklat:2,...}|null, seed} ],
+  total, totalBox, totalPcs,
+  status: baru | diproses | dikirim | selesai | batal,
+  source: web | import, updatedAt
+```
+
+## Fallback & hemat kuota (paket gratis Spark)
+
+- **Firebase gagal / kuota habis:** website tetap jalan dengan **harga default & semua topping tersedia**. Pesanan tetap terkirim ke WhatsApp (data lengkap ada di link review) dan disimpan di browser.
+- **Impor link:** admin tempel link review dari WA → pesanan masuk (ke Firebase, atau lokal jika Firebase gagal).
+- **Salin link:** tiap pesanan di admin punya tombol *Salin link* sebagai cadangan.
+- **Sinkronkan:** pesanan/perubahan yang tertahan di lokal ditandai *Lokal*; klik **Sinkronkan ke Firebase** saat Firebase normal lagi.
+- **Download backup (JSON) / Pulihkan / Export CSV** ada di menu *Impor & backup*.
+- Admin hanya membaca 200 pesanan terbaru dan tanpa listener realtime, supaya pemakaian kuota baca kecil.
+
+## Keamanan
+
+- Pelanggan (tanpa login) hanya bisa **membuat** pesanan dengan format valid dan membuka review pesanan lewat link.
+- Daftar pesanan, ubah status, hapus, dan pengaturan harga **hanya** untuk akun Firebase dengan email di daftar admin — dicek oleh server Firebase, bukan hanya oleh halaman web.
+- Menambah/menghapus admin: tambah user di Authentication, lalu ubah daftar email di `assets/js/config.js` **dan** `firestore.rules` (harus sama), Publish rules, upload `config.js`.
+- Mencabut akses cepat: Authentication → Users → hapus / disable user.
+- `apiKey` Firebase dan daftar email admin memang terlihat publik; yang melindungi data adalah Rules + password akun masing-masing.

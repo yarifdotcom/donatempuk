@@ -435,3 +435,13 @@ input, textarea { font: inherit; color: var(--ink); }
   .atur-actions .btn { min-height: 40px; padding: 6px 14px; font-size: 14px; flex: 1; }
   .atur-body { gap: 12px; }
 }
+
+/* ketersediaan */
+.habis { font-style: normal; font-family: var(--body); font-size: 11px; font-weight: 800; background: #2A1740; color: #fff; padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
+small.habis { align-self: flex-start; background: #FFE3E3; color: #A1122F; }
+.trow.off { opacity: .55; background: #F7F2EE; }
+.top-card.off { opacity: .6; }
+.top-card.off .top-art { filter: grayscale(.8); }
+.product.soldout { cursor: not-allowed; filter: grayscale(.75); opacity: .7; }
+.product.soldout:hover { transform: none; }
+.citem.blocked { background: #FFF3F3; border-radius: 12px; }

@@ -16,16 +16,35 @@ window.APP_CONFIG = {
   // contoh: 6281234567890
   WA_NUMBER: '6285645719632',
 
-  // Password halaman admin (admin.html)
+  // Password CADANGAN — hanya dipakai saat Firebase tidak bisa dihubungi,
+  // untuk membuka data cadangan yang tersimpan di browser admin itu sendiri.
   ADMIN_PASSWORD: '111',
 
-  // File database SQLite yang dibaca langsung dari repo (tanpa hosting):
-  //   'data/database.sql'    -> teks SQL (mudah diedit & dilihat di GitHub)
-  //   'data/database.sqlite' -> file SQLite biner
-  DB_FILE: 'data/database.sql',
+  // ---------- Firebase (Cloud Firestore) ----------
+  // Konfigurasi web app dari Firebase Console > Project settings > Your apps
+  FIREBASE_CONFIG: {
+    apiKey: 'AIzaSyAsjCJYDRFqqtAtOYSk75wiFArfa8H8Rcg',
+    authDomain: 'donatempuk.firebaseapp.com',
+    projectId: 'donatempuk',
+    storageBucket: 'donatempuk.firebasestorage.app',
+    messagingSenderId: '627440146896',
+    appId: '1:627440146896:web:160698103c5e0d48d901d5'
+  },
+  FIREBASE_SDK_VERSION: '12.19.0',
 
-  // Versi library sql.js (SQLite di browser) dari CDN
-  SQLJS_VERSION: '1.10.3',
+  // Batas waktu menunggu Firebase (ms). Lewat dari ini -> pakai cadangan lokal/default.
+  FIREBASE_TIMEOUT_MS: 8000,
+
+  // Jumlah pesanan terbaru yang dimuat di admin (hemat kuota baca Firestore gratis)
+  ADMIN_LIST_LIMIT: 200,
+
+  // Daftar email admin (akun di Firebase Authentication > Email/Password).
+  // Login admin = email + password akun Firebase masing-masing.
+  // WAJIB sama dengan daftar email di file firestore.rules.
+  ADMIN_EMAILS: [
+    'yarifdotcom@gmail.com',
+    'fatmaberliandina@gmail.com'
+  ],
 
   // Mata uang
   CURRENCY: 'Rp'

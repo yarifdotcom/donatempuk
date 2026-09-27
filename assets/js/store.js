@@ -99,27 +99,123 @@
   function lsGet(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 
-  // ---------- Pesanan: SQLite (window.DB) dengan cadangan localStorage ----------
-  function useDb() { return window.DB && window.DB.isOk(); }
-  function listOrders() { return useDb() ? window.DB.list() : lsGet(LS_ORDERS, []); }
-  function getOrder(id) {
-    if (useDb()) return window.DB.get(id);
-    return lsGet(LS_ORDERS, []).filter(function (x) { return x.id === id; })[0] || null;
+  // =========================================================
+  //  PENGATURAN TOKO (harga & ketersediaan) — Firebase + default
+  // =========================================================
+  var DEFAULTS = (function () {
+    var d = { packages: {}, toppings: {} };
+    Object.keys(DA.PACKAGES).forEach(function (k) { d.packages[k] = { name: DA.PACKAGES[k].name, price: DA.PACKAGES[k].price, available: true }; });
+    DA.ORDER.forEach(function (k) { d.toppings[k] = { name: DA.TOPPINGS[k].name, available: true }; });
+    return d;
+  })();
+  var settings = JSON.parse(JSON.stringify(DEFAULTS)), settingsSource = 'default';
+
+  function mergeSettings(s) {
+    var out = JSON.parse(JSON.stringify(DEFAULTS));
+    if (s && s.packages) Object.keys(out.packages).forEach(function (k) {
+      var p = s.packages[k]; if (!p) return;
+      if (typeof p.price === 'number' && p.price >= 0) out.packages[k].price = Math.round(p.price);
+      if (typeof p.name === 'string' && p.name) out.packages[k].name = p.name;
+      if (typeof p.available === 'boolean') out.packages[k].available = p.available;
+    });
+    if (s && s.toppings) Object.keys(out.toppings).forEach(function (k) {
+      var t = s.toppings[k]; if (!t) return;
+      if (typeof t.name === 'string' && t.name) out.toppings[k].name = t.name;
+      if (typeof t.available === 'boolean') out.toppings[k].available = t.available;
+    });
+    return out;
   }
+  function applySettings(s) {
+    settings = s;
+    Object.keys(s.packages).forEach(function (k) {
+      var P = DA.PACKAGES[k]; P.price = s.packages[k].price; P.name = s.packages[k].name; P.available = s.packages[k].available;
+    });
+    DA.ORDER.forEach(function (k) { DA.TOPPINGS[k].name = s.toppings[k].name; DA.TOPPINGS[k].available = s.toppings[k].available; });
+  }
+  function loadSettings() {
+    if (!window.FB) return Promise.resolve(false);
+    return FB.ready().then(function (on) {
+      if (!on) throw FB.error();
+      return FB.getSettings();
+    }).then(function (s) {
+      applySettings(mergeSettings(s)); settingsSource = s ? 'firebase' : 'default-empty'; return true;
+    }).catch(function (e) {
+      console.warn('[Settings] pakai default:', e && e.message);
+      applySettings(JSON.parse(JSON.stringify(DEFAULTS))); settingsSource = 'default'; return false;
+    });
+  }
+  function saveSettings(s) {
+    var m = mergeSettings(s);
+    return FB.saveSettings(m).then(function () { applySettings(m); settingsSource = 'firebase'; });
+  }
+  var readyP = null;
+  function ready() { return readyP || (readyP = loadSettings()); }
+
+  // =========================================================
+  //  PESANAN — Firebase utama, localStorage sebagai cadangan
+  // =========================================================
+  function cloudOn() { return !!(window.FB && FB.isOk()); }
+  function localAll() { return lsGet(LS_ORDERS, []); }
+  function localPut(o) {
+    var all = localAll().filter(function (x) { return x.id !== o.id; });
+    all.unshift(o); all.sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
+    lsSet(LS_ORDERS, all.slice(0, 500));
+  }
+  function localPatch(id, patch) { lsSet(LS_ORDERS, localAll().map(function (x) { return x.id === id ? Object.assign({}, x, patch) : x; })); }
+  function localDel(id) { lsSet(LS_ORDERS, localAll().filter(function (x) { return x.id !== id; })); }
+
+  // Simpan pesanan: selalu backup lokal, lalu kirim ke Firebase
   function saveOrder(o) {
-    if (useDb()) return window.DB.save(o);
-    var all = lsGet(LS_ORDERS, []).filter(function (x) { return x.id !== o.id; });
-    all.unshift(o); lsSet(LS_ORDERS, all);
+    var rec = Object.assign({}, o, { synced: false });
+    localPut(rec);
+    return ready().then(function () { return FB.createOrder(rec); })
+      .then(function () { localPatch(o.id, { synced: true }); return { cloud: true }; })
+      .catch(function (e) { console.warn('[Order] tersimpan lokal saja:', e && e.message); return { cloud: false, error: e }; });
+  }
+  // Daftar pesanan (admin): Firebase + pesanan lokal yang belum tersinkron
+  function listOrders() {
+    return ready().then(function () { return FB.listOrders(); }).then(function (cloud) {
+      var ids = {}; cloud.forEach(function (o) { ids[o.id] = 1; });
+      var pending = localAll().filter(function (o) { return !ids[o.id] || o.synced === false; });
+      pending.forEach(function (o) { if (ids[o.id]) cloud = cloud.filter(function (c) { return c.id !== o.id; }); });
+      return { orders: pending.concat(cloud).sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); }), cloud: true };
+    }).catch(function (e) {
+      return { orders: localAll(), cloud: false, error: e };
+    });
+  }
+  function getOrder(id) {
+    var local = localAll().filter(function (x) { return x.id === id; })[0] || null;
+    return ready().then(function () { return FB.getOrder(id); })
+      .then(function (o) { return o || local; })
+      .catch(function () { return local; });
   }
   function setStatus(id, st) {
-    if (useDb()) return window.DB.setStatus(id, st);
-    lsSet(LS_ORDERS, lsGet(LS_ORDERS, []).map(function (x) { return x.id === id ? Object.assign({}, x, { status: st }) : x; }));
+    localPatch(id, { status: st });
+    return ready().then(function () { return FB.setStatus(id, st); }).then(function () { return { cloud: true }; })
+      .catch(function (e) { localPatch(id, { synced: false }); return { cloud: false, error: e }; });
   }
   function deleteOrder(id) {
-    if (useDb()) return window.DB.remove(id);
-    lsSet(LS_ORDERS, lsGet(LS_ORDERS, []).filter(function (x) { return x.id !== id; }));
+    localDel(id);
+    return ready().then(function () { return FB.deleteOrder(id); }).then(function () { return { cloud: true }; }).catch(function (e) { return { cloud: false, error: e }; });
   }
-  function ready() { return window.DB ? window.DB.ready() : Promise.resolve(false); }
+  // Kirim semua pesanan lokal yang belum tersinkron ke Firebase
+  function syncPending(orders) {
+    var list = (orders || localAll()).filter(function (o) { return o.synced === false; });
+    var done = 0;
+    return list.reduce(function (p, o) {
+      return p.then(function () {
+        return FB.createOrder(o).then(function () { localPatch(o.id, { synced: true }); done++; });
+      });
+    }, Promise.resolve()).then(function () { return done; }, function (e) { e.done = done; throw e; });
+  }
+  function importOrder(o) {
+    o.synced = false; o.source = 'import';
+    if (!localAll().some(function (x) { return x.id === o.id; })) localPut(o);
+    return ready().then(function () { return FB.createOrder(o); }).then(function () { localPatch(o.id, { synced: true }); return { cloud: true }; })
+      .catch(function (e) { return { cloud: false, error: e }; });
+  }
+  function localBackup() { return localAll(); }
+  function restoreBackup(list) { list.forEach(function (o) { if (o && o.id && Array.isArray(o.items)) localPut(Object.assign({ synced: false }, o)); }); }
 
   // Terapkan nama brand dari config ke elemen bertanda data-brand
   function applyBrand() {
@@ -142,7 +238,10 @@
     total: total, totalPcs: totalPcs, totalBox: totalBox,
     encode: encode, decode: decode, reviewLink: reviewLink, waText: waText, waLink: waLink, newId: newId,
     lsGet: lsGet, lsSet: lsSet, LS_CART: LS_CART,
-    ready: ready, useDb: useDb,
-    listOrders: listOrders, getOrder: getOrder, saveOrder: saveOrder, setStatus: setStatus, deleteOrder: deleteOrder
+    ready: ready, cloudOn: cloudOn,
+    getSettings: function () { return settings; }, settingsSource: function () { return settingsSource; },
+    defaults: function () { return JSON.parse(JSON.stringify(DEFAULTS)); }, saveSettings: saveSettings,
+    listOrders: listOrders, getOrder: getOrder, saveOrder: saveOrder, setStatus: setStatus, deleteOrder: deleteOrder,
+    syncPending: syncPending, importOrder: importOrder, localBackup: localBackup, restoreBackup: restoreBackup
   };
 })();
