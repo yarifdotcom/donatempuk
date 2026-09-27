@@ -62,7 +62,11 @@
     var S = window.Store;
     return clean({
       id: o.id, createdAt: o.createdAt, name: o.name, phone: o.phone, address: o.address, note: o.note || '',
-      items: (o.items || []).map(function (it) { return { pkg: String(it.pkg), mode: it.mode, qty: Number(it.qty) || 1, counts: it.counts || null, seed: Number(it.seed) || 1 }; }),
+      items: (o.items || []).map(function (it) {
+        if (it.type === 'honey') return { type: 'honey', key: String(it.key), size: String(it.size), qty: Number(it.qty) || 1 };
+        return { pkg: String(it.pkg), mode: it.mode, qty: Number(it.qty) || 1, counts: it.counts || null, seed: Number(it.seed) || 1 };
+      }),
+      totalBottles: S.totalBottles(o.items),
       total: Number(o.total) || 0, totalBox: S.totalBox(o.items), totalPcs: S.totalPcs(o.items),
       status: o.status || 'baru', source: o.source || 'web'
     });

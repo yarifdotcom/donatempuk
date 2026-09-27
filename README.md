@@ -19,6 +19,7 @@ assets/js/store.js      Pesanan, pengaturan, cadangan lokal, link review, pesan 
 assets/js/app.js        Logika kasir
 assets/js/admin.js      Logika admin
 assets/js/donut.js      Renderer vektor donat & box isometrik (SVG)
+assets/js/honey.js      Menu pelengkap madu: varian, harga default, renderer botol (SVG)
 assets/img/             Aset vektor SVG
 ```
 
@@ -37,6 +38,12 @@ assets/img/             Aset vektor SVG
 | `FIREBASE_TIMEOUT_MS` | `8000` | Batas tunggu sebelum pakai cadangan |
 | `ADMIN_LIST_LIMIT` | `200` | Jumlah pesanan yang dibaca admin (hemat kuota) |
 
+## Menu pelengkap: Madu
+
+Varian: Trigona Klanceng, Hutan, Randu, Multiflora, Kaliandra, Rambutan (1000/500/330 gr) dan BPRO (330 gr).
+Harga default ada di `assets/js/honey.js`; harga & ketersediaan per varian/ukuran diatur di **admin → Pengaturan → Madu**.
+Madu masuk ke keranjang yang sama dengan donat.
+
 ## Setup Firebase (sekali saja)
 
 1. Firebase Console → **Build → Firestore Database → Create database** (lokasi `asia-southeast2`, mode *production*).
@@ -51,12 +58,14 @@ Koleksi dibuat otomatis, tidak perlu membuat tabel manual:
 settings/store
   packages: { "12": {name, price, available}, "6": {...}, "2": {...} }
   toppings: { vanila: {name, available}, coklat, matcha, strowberi, redvelvet, oreo }
+  honey:    { kaliandra: {name, available, sizes: {"1000": {price, available}, "500": {...}, "330": {...}}}, ... }
   updatedAt
 
 orders/{DE260927-XXXX}
   id, createdAt, name, phone, address, note,
-  items: [ {pkg:"12", mode:"campur"|"atur", qty, counts:{coklat:2,...}|null, seed} ],
-  total, totalBox, totalPcs,
+  items: [ {pkg:"12", mode:"campur"|"atur", qty, counts:{coklat:2,...}|null, seed}
+         | {type:"honey", key:"kaliandra", size:"500", qty} ],
+  total, totalBox, totalPcs, totalBottles,
   status: baru | diproses | dikirim | selesai | batal,
   source: web | import, updatedAt
 ```

@@ -18,9 +18,9 @@
   var ORDER = ['vanila', 'coklat', 'matcha', 'strowberi', 'redvelvet', 'oreo'];
 
   var PACKAGES = {
-    '12': { id: '12', name: 'Isi 12', rows: 3, cols: 4, price: 34000, palette: 'pink' },
+    '12': { id: '12', name: 'Isi 12', rows: 3, cols: 4, price: 33000, palette: 'pink' },
     '6':  { id: '6',  name: 'Isi 6',  rows: 2, cols: 3, price: 17000, palette: 'teal' },
-    '2':  { id: '2',  name: 'Isi 2',  rows: 1, cols: 2, price: 9000,  palette: 'sun' }
+    '2':  { id: '2',  name: 'Isi 2',  rows: 1, cols: 2, price: 7000,  palette: 'sun' }
   };
 
   var PALETTES = {

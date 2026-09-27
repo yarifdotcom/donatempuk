@@ -28,6 +28,7 @@
 
 <script src="assets/js/config.js"></script>
 <script src="assets/js/donut.js"></script>
+<script src="assets/js/honey.js"></script>
 <script src="assets/js/firebase.js"></script>
 <script src="assets/js/store.js"></script>
 <script>
@@ -42,13 +43,11 @@
     var d = new Date(o.createdAt);
     var dstr = isNaN(d) ? '' : d.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' });
     var boxes = o.items.map(function (it) {
-      var fills = it.mode === 'campur' ? DA.randomFills(it.pkg, it.seed) : DA.fillsFromCounts(it.pkg, it.counts);
-      return '<div class="r-item">' +
-        '<div class="r-art">' + DA.box(it.pkg, fills, { seed: it.seed }) + '<span class="r-qty">×' + it.qty + '</span></div>' +
-        '<div class="r-info"><h3>Box ' + DA.PACKAGES[it.pkg].name + '</h3>' +
-        '<span class="chip ' + (it.mode === 'campur' ? 'chip-mix' : 'chip-set') + '">' + (it.mode === 'campur' ? 'Campur' : 'Atur sendiri') + '</span>' +
+      return '<div class="r-item' + (S.isHoney(it) ? ' is-honey' : '') + '">' +
+        '<div class="r-art">' + S.itemArt(it) + '<span class="r-qty">×' + it.qty + '</span></div>' +
+        '<div class="r-info"><h3>' + esc(S.itemTitle(it)) + '</h3>' + S.itemChip(it) +
         '<p>' + esc(S.itemDetail(it)) + '</p>' +
-        '<div class="r-price"><span>' + it.qty + ' × ' + S.fmt(DA.PACKAGES[it.pkg].price) + '</span><b>' + S.fmt(S.itemPrice(it)) + '</b></div></div></div>';
+        '<div class="r-price"><span>' + it.qty + ' × ' + S.fmt(S.unitPrice(it)) + '</span><b>' + S.fmt(S.itemPrice(it)) + '</b></div></div></div>';
     }).join('');
     var link = location.href;
     el.innerHTML =
@@ -64,7 +63,7 @@
       '</dl>' +
       '<div class="r-items">' + boxes + '</div>' +
       '<div class="r-total">' +
-        '<div class="row"><span>Jumlah</span><b>' + S.totalBox(o.items) + ' box · ' + S.totalPcs(o.items) + ' pcs</b></div>' +
+        '<div class="row"><span>Jumlah</span><b>' + S.summary(o.items) + '</b></div>' +
         '<div class="row total"><span>Total harga</span><b>' + S.fmt(o.total) + '</b></div>' +
         '<p class="note">*Harga belum termasuk ongkir. Ongkir akan dikonfirmasi admin via WhatsApp.</p>' +
       '</div>' +

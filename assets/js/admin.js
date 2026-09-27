@@ -115,7 +115,7 @@
   function render() {
     var all = orders.filter(function (o) { return o.status !== 'batal'; });
     $('#stOrders').textContent = orders.length;
-    $('#stBoxes').textContent = all.reduce(function (s, o) { return s + S.totalBox(o.items); }, 0);
+    $('#stBoxes').textContent = all.reduce(function (s, o) { return s + S.totalBox(o.items); }, 0) + ' · ' + all.reduce(function (s, o) { return s + S.totalBottles(o.items); }, 0);
     $('#stPcs').textContent = all.reduce(function (s, o) { return s + S.totalPcs(o.items); }, 0);
     $('#stRev').textContent = S.fmt(all.reduce(function (s, o) { return s + Number(o.total || 0); }, 0));
 
@@ -127,9 +127,8 @@
     $('#orders').innerHTML = list.map(function (o) {
       var d = new Date(o.createdAt), st = o.status || 'baru';
       var items = o.items.map(function (it) {
-        var P = DA.PACKAGES[it.pkg] || { name: it.pkg, price: 0 };
-        return '<li><span class="mini">' + DA.box(it.pkg, it.mode === 'campur' ? DA.randomFills(it.pkg, it.seed) : DA.fillsFromCounts(it.pkg, it.counts), { lid: false, seed: it.seed }) + '</span>' +
-          '<div><b>' + it.qty + '× Box ' + esc(P.name) + '</b> <span class="chip ' + (it.mode === 'campur' ? 'chip-mix' : 'chip-set') + '">' + (it.mode === 'campur' ? 'Campur' : 'Atur') + '</span>' +
+        return '<li><span class="mini">' + S.itemArt(it, { lid: false }) + '</span>' +
+          '<div><b>' + it.qty + '× ' + esc(S.itemTitle(it)) + '</b> ' + S.itemChip(it) +
           '<small>' + esc(S.itemDetail(it)) + '</small></div></li>';
       }).join('');
       var waCust = 'https://wa.me/' + String(o.phone).replace(/\D/g, '').replace(/^0/, '62') + '?text=' + encodeURIComponent('Halo ' + o.name + ', pesanan ' + (CFG.STORE_NAME || 'Donat Empuk') + ' #' + o.id + ' sudah kami terima. Total ' + S.fmt(o.total) + ' + ongkir: ');
@@ -141,7 +140,7 @@
         '<div class="o-body"><dl class="o-cust"><div><dt>Nama</dt><dd>' + esc(o.name) + '</dd></div><div><dt>No. HP</dt><dd>' + esc(o.phone) + '</dd></div>' +
         '<div class="w"><dt>Alamat</dt><dd>' + esc(o.address) + '</dd></div>' + (o.note ? '<div class="w"><dt>Catatan</dt><dd>' + esc(o.note) + '</dd></div>' : '') + '</dl>' +
         '<ul class="o-items">' + items + '</ul></div>' +
-        '<div class="o-foot"><div><small>' + S.totalBox(o.items) + ' box · ' + S.totalPcs(o.items) + ' pcs · belum ongkir</small><b>' + S.fmt(o.total) + '</b></div>' +
+        '<div class="o-foot"><div><small>' + esc(S.summary(o.items)) + ' · belum ongkir</small><b>' + S.fmt(o.total) + '</b></div>' +
         '<div class="o-act"><a class="btn btn-sm btn-ghost" target="_blank" rel="noopener" href="' + esc(S.reviewLink(o)) + '">Review</a>' +
         '<button class="btn btn-sm btn-ghost" data-copy="' + esc(o.id) + '">Salin link</button>' +
         '<a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="' + esc(waCust) + '">WA pelanggan</a>' +
@@ -191,11 +190,11 @@
     e.target.value = '';
   });
   $('#exportCsv').addEventListener('click', function () {
-    var rows = [['ID', 'Tanggal', 'Nama', 'No HP', 'Alamat', 'Catatan', 'Detail', 'Total Box', 'Total Pcs', 'Total Harga', 'Status']];
+    var rows = [['ID', 'Tanggal', 'Nama', 'No HP', 'Alamat', 'Catatan', 'Detail', 'Total Box', 'Total Pcs', 'Botol Madu', 'Total Harga', 'Status']];
     filtered().forEach(function (o) {
       rows.push([o.id, o.createdAt, o.name, o.phone, o.address, o.note || '',
-        o.items.map(function (it) { return it.qty + 'x Box ' + (DA.PACKAGES[it.pkg] || {}).name + ' (' + (it.mode === 'campur' ? 'Campur' : S.itemDetail(it)) + ')'; }).join('; '),
-        S.totalBox(o.items), S.totalPcs(o.items), o.total, o.status || 'baru']);
+        o.items.map(function (it) { return it.qty + 'x ' + S.itemTitle(it) + (S.isHoney(it) ? '' : ' (' + S.itemShort(it) + ')'); }).join('; '),
+        S.totalBox(o.items), S.totalPcs(o.items), S.totalBottles(o.items), o.total, o.status || 'baru']);
     });
     var csv = rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
     download('pesanan-' + slug() + '-' + stamp() + '.csv', '﻿' + csv, 'text/csv;charset=utf-8');
@@ -225,12 +224,32 @@
         '<label class="switch"><input type="checkbox" data-tavail="' + k + '"' + (t.available ? ' checked' : '') + '><span class="tr"></span><span class="lb">' + (t.available ? 'Tersedia' : 'Habis') + '</span></label>' +
         '</div>';
     }).join('');
+    renderHoneySettings(st);
+  }
+  function renderHoneySettings(st) {
+    $('#setHoney').innerHTML = DA.HONEY_ORDER.map(function (k) {
+      var h = st.honey[k];
+      return '<div class="hset-row">' +
+        '<span class="sw">' + DA.bottle(k, '500') + '</span>' +
+        '<div class="hset-main">' +
+          '<div class="hset-top"><span class="nm">Madu ' + esc(h.name) + '</span>' +
+          '<label class="switch"><input type="checkbox" data-havail="' + k + '"' + (h.available ? ' checked' : '') + '><span class="tr"></span><span class="lb">' + (h.available ? 'Tersedia' : 'Habis') + '</span></label></div>' +
+          '<div class="hset-sizes">' + Object.keys(h.sizes).sort(function (a, b) { return b - a; }).map(function (z) {
+            var v = h.sizes[z];
+            return '<div class="hset-size"><b>' + z + ' gr</b>' +
+              '<label class="price-in"><span>Rp</span><input type="number" min="0" step="1000" inputmode="numeric" data-hprice="' + k + ':' + z + '" value="' + v.price + '" aria-label="Harga Madu ' + esc(h.name) + ' ' + z + ' gram"></label>' +
+              '<label class="switch sm"><input type="checkbox" data-hsavail="' + k + ':' + z + '"' + (v.available ? ' checked' : '') + '><span class="tr"></span><span class="lb">' + (v.available ? 'Ada' : 'Habis') + '</span></label></div>';
+          }).join('') + '</div>' +
+        '</div></div>';
+    }).join('');
   }
   document.addEventListener('change', function (e) {
     var t = e.target;
     if (t.matches('[data-pavail],[data-tavail]')) {
       t.parentNode.querySelector('.lb').textContent = t.checked ? 'Tersedia' : (t.hasAttribute('data-pavail') ? 'Tidak dijual' : 'Habis');
     }
+    if (t.matches('[data-havail]')) t.parentNode.querySelector('.lb').textContent = t.checked ? 'Tersedia' : 'Habis';
+    if (t.matches('[data-hsavail]')) t.parentNode.querySelector('.lb').textContent = t.checked ? 'Ada' : 'Habis';
   });
   function readForm() {
     var st = S.defaults();
@@ -240,6 +259,14 @@
       st.packages[k].available = $('[data-pavail="' + k + '"]').checked;
     });
     DA.ORDER.forEach(function (k) { st.toppings[k].available = $('[data-tavail="' + k + '"]').checked; });
+    Object.keys(st.honey).forEach(function (k) {
+      st.honey[k].available = $('[data-havail="' + k + '"]').checked;
+      Object.keys(st.honey[k].sizes).forEach(function (z) {
+        var v = parseInt($('[data-hprice="' + k + ':' + z + '"]').value, 10);
+        if (!isNaN(v) && v >= 0) st.honey[k].sizes[z].price = v;
+        st.honey[k].sizes[z].available = $('[data-hsavail="' + k + ':' + z + '"]').checked;
+      });
+    });
     return st;
   }
   $('#setSave').addEventListener('click', function () {

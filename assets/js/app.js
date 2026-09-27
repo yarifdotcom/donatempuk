@@ -289,14 +289,12 @@
   function renderCart() {
     var list = $('#cartList');
     if (!cart.length) {
-      list.innerHTML = '<div class="empty"><img src="assets/img/box-empty.svg" alt="" width="150"><p><b>Keranjang masih kosong</b><br>Pilih box donat di sebelah kiri.</p></div>';
+      list.innerHTML = '<div class="empty"><img src="assets/img/box-empty.svg" alt="" width="150"><p><b>Keranjang masih kosong</b><br>Pilih box donat atau madu pelengkap.</p></div>';
     } else {
       list.innerHTML = cart.map(function (it, i) {
-        var fills = it.mode === 'campur' ? DA.randomFills(it.pkg, it.seed) : DA.fillsFromCounts(it.pkg, it.counts);
-        return '<div class="citem' + (itemBlocked(it) ? ' blocked' : '') + '">' +
-          '<div class="cart-art">' + DA.box(it.pkg, fills, { lid: false, seed: it.seed }) + '</div>' +
-          '<div class="cinfo"><b>Box ' + DA.PACKAGES[it.pkg].name + '</b>' +
-          '<span class="chip ' + (it.mode === 'campur' ? 'chip-mix' : 'chip-set') + '">' + (it.mode === 'campur' ? 'Campur' : 'Atur sendiri') + '</span>' +
+        return '<div class="citem' + (itemBlocked(it) ? ' blocked' : '') + (S.isHoney(it) ? ' is-honey' : '') + '">' +
+          '<div class="cart-art">' + S.itemArt(it, { lid: false }) + '</div>' +
+          '<div class="cinfo"><b>' + esc(S.itemTitle(it)) + '</b>' + S.itemChip(it) +
           '<small>' + esc(S.itemDetail(it)) + '</small>' +
           (itemBlocked(it) ? '<small class="habis">Tidak tersedia saat ini</small>' : '') +
           '<div class="crow"><div class="stepper xs">' +
@@ -307,14 +305,14 @@
           '</div>';
       }).join('');
     }
-    var tot = S.total(cart), bx = S.totalBox(cart), pcs = S.totalPcs(cart);
+    var tot = S.total(cart), n = S.totalBox(cart) + S.totalBottles(cart);
     $('#cartTotal').textContent = S.fmt(tot);
-    $('#cartBoxes').textContent = bx + ' box · ' + pcs + ' pcs';
-    $('#cartBadge').textContent = bx;
-    $('#cartBadge').classList.toggle('show', bx > 0);
+    $('#cartBoxes').textContent = S.summary(cart);
+    $('#cartBadge').textContent = n;
+    $('#cartBadge').classList.toggle('show', n > 0);
     $('#mbarTotal').textContent = S.fmt(tot);
-    $('#mbarCount').textContent = bx + ' box · ' + pcs + ' pcs';
-    $('#mbar').classList.toggle('show', bx > 0);
+    $('#mbarCount').textContent = S.summary(cart);
+    $('#mbar').classList.toggle('show', n > 0);
     $('#checkoutBtn').disabled = !cart.length;
   }
   $('#cartList').addEventListener('click', function (e) {
@@ -339,6 +337,7 @@
 
   // ---------- CHECKOUT ----------
   function itemBlocked(it) {
+    if (S.isHoney(it)) return !S.honeyAvailable(it.key, it.size);
     if (DA.PACKAGES[it.pkg].available === false) return true;
     return it.mode === 'atur' && it.counts && DA.ORDER.some(function (k) { return it.counts[k] > 0 && DA.TOPPINGS[k].available === false; });
   }
@@ -347,7 +346,7 @@
     if (cart.some(itemBlocked)) { toast('Ada item yang sedang tidak tersedia. Hapus dulu dari keranjang.'); return; }
     closeCart();
     $('#coSum').innerHTML = cart.map(function (it) {
-      return '<li><div><b>' + it.qty + '× Box ' + DA.PACKAGES[it.pkg].name + '</b><small>' + (it.mode === 'campur' ? 'Campur' : esc(S.itemDetail(it))) + '</small></div><span>' + S.fmt(S.itemPrice(it)) + '</span></li>';
+      return '<li><div><b>' + it.qty + '× ' + esc(S.itemTitle(it)) + '</b><small>' + esc(S.itemShort(it)) + '</small></div><span>' + S.fmt(S.itemPrice(it)) + '</span></li>';
     }).join('');
     $('#coTotal').textContent = S.fmt(S.total(cart));
     $('#coErr').textContent = '';
@@ -372,7 +371,10 @@
     var order = {
       id: S.newId(), createdAt: new Date().toISOString(),
       name: name, phone: phone, address: address, note: note,
-      items: cart.map(function (it) { return { pkg: it.pkg, mode: it.mode, qty: it.qty, counts: it.counts, seed: it.seed }; }),
+      items: cart.map(function (it) {
+        if (S.isHoney(it)) return { type: 'honey', key: it.key, size: it.size, qty: it.qty };
+        return { pkg: it.pkg, mode: it.mode, qty: it.qty, counts: it.counts, seed: it.seed };
+      }),
       status: 'baru'
     };
     order.total = S.total(order.items);
@@ -398,9 +400,9 @@
       '<div class="w"><dt>Alamat</dt><dd>' + esc(o.address) + '</dd></div>' +
       (o.note ? '<div class="w"><dt>Catatan</dt><dd>' + esc(o.note) + '</dd></div>' : '') + '</dl>' +
       '<ul class="sum-list">' + o.items.map(function (it) {
-        return '<li><div><b>' + it.qty + '× Box ' + DA.PACKAGES[it.pkg].name + '</b><small>' + (it.mode === 'campur' ? 'Campur' : esc(S.itemDetail(it))) + '</small></div><span>' + S.fmt(S.itemPrice(it)) + '</span></li>';
+        return '<li><div><b>' + it.qty + '× ' + esc(S.itemTitle(it)) + '</b><small>' + esc(S.itemShort(it)) + '</small></div><span>' + S.fmt(S.itemPrice(it)) + '</span></li>';
       }).join('') + '</ul>' +
-      '<div class="row total"><span>Total (' + S.totalBox(o.items) + ' box · ' + S.totalPcs(o.items) + ' pcs)</span><b>' + S.fmt(o.total) + '</b></div>' +
+      '<div class="row total"><span>Total (' + S.summary(o.items) + ')</span><b>' + S.fmt(o.total) + '</b></div>' +
       '<p class="note">*Harga belum termasuk ongkir.</p>';
     $('#rvLink').value = link;
     $('#rvOpen').href = link;
@@ -414,6 +416,52 @@
   });
 
   renderCart();
+
+  // ---------- MENU PELENGKAP: MADU ----------
+  var honeySel = {};   // ukuran terpilih per varian
+  function defaultSize(k) {
+    var sizes = DA.honeySizes(k), on = sizes.filter(function (z) { return S.honeyAvailable(k, z); });
+    if (on.indexOf('500') > -1) return '500';
+    return on[0] || sizes[0];
+  }
+  function renderHoney() {
+    var grid = $('#honeyGrid'); if (!grid) return;
+    grid.innerHTML = DA.HONEY_ORDER.map(function (k) {
+      var H = DA.HONEY[k], off = !S.honeyAvailable(k);
+      var sizes = DA.honeySizes(k);
+      if (!honeySel[k] || !S.honeyAvailable(k, honeySel[k])) honeySel[k] = defaultSize(k);
+      var sel = honeySel[k], selOff = off || !S.honeyAvailable(k, sel);
+      return '<article class="honey-card' + (off ? ' off' : '') + '" data-honey="' + k + '" style="--hc:' + H.liquid + '">' +
+        '<div class="honey-art">' + DA.bottle(k, sel) + '</div>' +
+        '<div class="honey-info">' +
+          '<h3>Madu ' + esc(H.name) + (off ? ' <em class="habis">Habis</em>' : '') + '</h3>' +
+          '<p>' + esc(H.taste) + '</p>' +
+          '<div class="sizes" role="radiogroup" aria-label="Ukuran Madu ' + esc(H.name) + '">' + sizes.map(function (z) {
+            var zOff = off || !S.honeyAvailable(k, z);
+            return '<button type="button" role="radio" class="size' + (z === sel ? ' on' : '') + '" data-hsize="' + z + '" aria-checked="' + (z === sel) + '"' + (zOff ? ' disabled' : '') + '>' +
+              '<b>' + z + 'gr</b><span>' + (zOff ? 'Habis' : kNum(H.prices[z]) + 'K') + '</span></button>';
+          }).join('') + '</div>' +
+          '<div class="honey-buy"><b class="hprice">' + S.fmt(H.prices[sel]) + '</b>' +
+          '<button type="button" class="btn btn-sm btn-honey" data-hadd="' + k + '"' + (selOff ? ' disabled' : '') + ' aria-label="Tambah Madu ' + esc(H.name) + ' ' + sel + ' gram ke keranjang">+ Tambah</button></div>' +
+        '</div></article>';
+    }).join('');
+  }
+  $('#honeyGrid').addEventListener('click', function (e) {
+    var card = e.target.closest('[data-honey]'); if (!card) return;
+    var k = card.getAttribute('data-honey');
+    var sz = e.target.closest('[data-hsize]');
+    if (sz && !sz.disabled) { honeySel[k] = sz.getAttribute('data-hsize'); renderHoney(); return; }
+    var add = e.target.closest('[data-hadd]');
+    if (add && !add.disabled) {
+      var size = honeySel[k];
+      var ex = cart.filter(function (it) { return S.isHoney(it) && it.key === k && it.size === size; })[0];
+      if (ex) ex.qty = Math.min(50, ex.qty + 1);
+      else cart.push({ key: k, type: 'honey', size: size, qty: 1 });
+      saveCart(); renderCart(); bump();
+      toast('Madu ' + DA.HONEY[k].name + ' ' + size + ' gr masuk keranjang');
+    }
+  });
+  renderHoney();
 
   // ---------- Muat pengaturan (harga & ketersediaan) dari Firebase ----------
   function kNum(p) { return (p / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 }); }
@@ -431,7 +479,7 @@
     var min = Math.min.apply(null, (on.length ? on : Object.keys(DA.PACKAGES)).map(function (k) { return DA.PACKAGES[k].price; }));
     var ms = $('#minPrice'); if (ms) ms.textContent = kNum(min) + 'K';
     var nt = $('#topCount'); if (nt) nt.textContent = DA.ORDER.filter(function (k) { return DA.TOPPINGS[k].available !== false; }).length;
-    renderToppings(); renderCart();
+    renderToppings(); renderHoney(); renderCart();
   }
   S.ready().then(renderCatalog);
 })();

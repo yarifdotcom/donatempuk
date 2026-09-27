@@ -28,6 +28,7 @@
     <nav class="nav" aria-label="Navigasi utama">
       <a href="#kasir">Kasir</a>
       <a href="#topping">Topping</a>
+      <a href="#madu">Madu</a>
       <a href="#cara">Cara Pesan</a>
     </nav>
     <button class="cart-btn" id="openCart" aria-label="Buka keranjang">
@@ -115,6 +116,18 @@
             <span class="add">+ Pilih</span>
           </button>
         </div>
+
+        <!-- Menu pelengkap: madu -->
+        <div class="side-menu" id="madu">
+          <div class="sec-head">
+            <div>
+              <span class="eyebrow">Menu pelengkap</span>
+              <h2>Madu asli</h2>
+            </div>
+            <p class="muted">Teman donat &amp; oleh-oleh sehat — masuk keranjang yang sama</p>
+          </div>
+          <div class="honey-grid" id="honeyGrid"></div>
+        </div>
       </div>
 
       <!-- Keranjang (panel kasir) -->
@@ -127,7 +140,7 @@
         </div>
         <div class="cart-list" id="cartList"></div>
         <div class="cart-foot">
-          <div class="row"><span>Total box</span><b id="cartBoxes">0 box · 0 pcs</b></div>
+          <div class="row"><span>Isi</span><b id="cartBoxes">0 box · 0 pcs</b></div>
           <div class="row total"><span>Total</span><b id="cartTotal">Rp 0</b></div>
           <p class="note">*Harga belum termasuk ongkir</p>
           <button class="btn btn-primary btn-block" id="checkoutBtn" disabled>Checkout</button>
@@ -342,6 +355,7 @@
 
 <script src="assets/js/config.js"></script>
 <script src="assets/js/donut.js"></script>
+<script src="assets/js/honey.js"></script>
 <script src="assets/js/firebase.js"></script>
 <script src="assets/js/store.js"></script>
 <script src="assets/js/app.js"></script>

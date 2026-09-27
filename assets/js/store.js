@@ -11,19 +11,43 @@
   function fmt(n) { return (CFG.CURRENCY || 'Rp') + ' ' + Number(n || 0).toLocaleString('id-ID'); }
   function fmtK(n) { return Math.round(n / 1000) + 'K'; }
 
-  function itemLabel(it) {
-    var p = DA.PACKAGES[it.pkg];
-    return 'Box ' + p.name + ' (' + (it.mode === 'campur' ? 'Campur' : 'Atur sendiri') + ')';
+  // ---------- item keranjang: donat (box) atau madu (botol) ----------
+  function isHoney(it) { return !!it && it.type === 'honey'; }
+  function honeyOf(it) { return (DA.HONEY && DA.HONEY[it.key]) || { name: it.key, short: it.key, taste: '', prices: {} }; }
+  function unitPrice(it) {
+    if (isHoney(it)) return Number(honeyOf(it).prices[it.size]) || 0;
+    return (DA.PACKAGES[it.pkg] || { price: 0 }).price;
   }
+  function itemTitle(it) { return isHoney(it) ? 'Madu ' + honeyOf(it).name + ' ' + it.size + ' gr' : 'Box ' + (DA.PACKAGES[it.pkg] || { name: it.pkg }).name; }
+  function itemLabel(it) { return isHoney(it) ? itemTitle(it) : itemTitle(it) + ' (' + (it.mode === 'campur' ? 'Campur' : 'Atur sendiri') + ')'; }
   function itemDetail(it) {
+    if (isHoney(it)) return honeyOf(it).taste;
     if (it.mode === 'campur' || !it.counts) return 'Topping campur aneka rasa';
     return DA.ORDER.filter(function (k) { return it.counts[k] > 0; })
       .map(function (k) { return DA.TOPPINGS[k].name + ' ' + it.counts[k]; }).join(', ');
   }
-  function itemPrice(it) { return DA.PACKAGES[it.pkg].price * it.qty; }
+  // teks singkat (untuk WA / ringkasan): "Campur", "Coklat 2, Oreo 4", atau rasa madu
+  function itemShort(it) { return isHoney(it) ? honeyOf(it).taste : (it.mode === 'campur' ? 'Campur' : itemDetail(it)); }
+  function itemChip(it) {
+    if (isHoney(it)) return '<span class="chip chip-honey">Madu</span>';
+    return '<span class="chip ' + (it.mode === 'campur' ? 'chip-mix' : 'chip-set') + '">' + (it.mode === 'campur' ? 'Campur' : 'Atur sendiri') + '</span>';
+  }
+  function itemArt(it, opt) {
+    if (isHoney(it)) return DA.bottle(it.key, it.size);
+    var fills = it.mode === 'campur' ? DA.randomFills(it.pkg, it.seed) : DA.fillsFromCounts(it.pkg, it.counts);
+    return DA.box(it.pkg, fills, Object.assign({ seed: it.seed }, opt || {}));
+  }
+  function itemPrice(it) { return unitPrice(it) * it.qty; }
   function total(items) { return items.reduce(function (s, it) { return s + itemPrice(it); }, 0); }
-  function totalPcs(items) { return items.reduce(function (s, it) { return s + Number(it.pkg) * it.qty; }, 0); }
-  function totalBox(items) { return items.reduce(function (s, it) { return s + it.qty; }, 0); }
+  function totalPcs(items) { return items.reduce(function (s, it) { return s + (isHoney(it) ? 0 : Number(it.pkg) * it.qty); }, 0); }
+  function totalBox(items) { return items.reduce(function (s, it) { return s + (isHoney(it) ? 0 : it.qty); }, 0); }
+  function totalBottles(items) { return items.reduce(function (s, it) { return s + (isHoney(it) ? it.qty : 0); }, 0); }
+  function summary(items) {
+    var parts = [], b = totalBox(items), m = totalBottles(items);
+    if (b) parts.push(b + ' box · ' + totalPcs(items) + ' pcs donat');
+    if (m) parts.push(m + ' botol madu');
+    return parts.join(' · ') || '0 item';
+  }
 
   // ---------- encode / decode untuk link review ----------
   function b64e(str) {
@@ -39,6 +63,7 @@
     var c = {
       i: o.id, t: o.createdAt, n: o.name, p: o.phone, a: o.address, o: o.note || '',
       x: o.items.map(function (it) {
+        if (isHoney(it)) return ['h', it.key, String(it.size), it.qty];
         return [it.pkg, it.mode === 'campur' ? 'c' : 'a', it.qty,
           it.counts ? DA.ORDER.map(function (k) { return it.counts[k] || 0; }) : 0, it.seed || 1];
       })
@@ -48,6 +73,7 @@
   function decode(s) {
     var c = JSON.parse(b64d(s));
     var items = (c.x || []).map(function (a) {
+      if (a[0] === 'h') return { type: 'honey', key: a[1], size: String(a[2]), qty: a[3] };
       var counts = null;
       if (Array.isArray(a[3])) { counts = {}; DA.ORDER.forEach(function (k, i) { counts[k] = a[3][i] || 0; }); }
       return { pkg: String(a[0]), mode: a[1] === 'c' ? 'campur' : 'atur', qty: a[2], counts: counts, seed: a[4] || 1 };
@@ -65,7 +91,7 @@
 
   function waText(o, link) {
     var L = [];
-    L.push('Halo ' + (CFG.STORE_NAME || 'Donat Empuk') + ', saya mau pesan donat.');
+    L.push('Halo ' + (CFG.STORE_NAME || 'Donat Empuk') + ', saya mau pesan.');
     L.push('');
     L.push('*PESANAN #' + o.id + '*');
     L.push('Nama   : ' + o.name);
@@ -75,10 +101,10 @@
     L.push('');
     L.push('*Detail:*');
     o.items.forEach(function (it) {
-      L.push('- ' + it.qty + 'x Box ' + DA.PACKAGES[it.pkg].name + ' (' + (it.mode === 'campur' ? 'Campur' : itemDetail(it)) + ')');
+      L.push('- ' + it.qty + 'x ' + itemTitle(it) + (isHoney(it) ? '' : ' (' + itemShort(it) + ')'));
     });
     L.push('');
-    L.push('Total: ' + totalBox(o.items) + ' box / ' + totalPcs(o.items) + ' pcs');
+    L.push('Total: ' + summary(o.items));
     L.push('*Total harga: ' + fmt(o.total) + '*');
     L.push('_(belum termasuk ongkir)_');
     L.push('');
@@ -106,6 +132,11 @@
     var d = { packages: {}, toppings: {} };
     Object.keys(DA.PACKAGES).forEach(function (k) { d.packages[k] = { name: DA.PACKAGES[k].name, price: DA.PACKAGES[k].price, available: true }; });
     DA.ORDER.forEach(function (k) { d.toppings[k] = { name: DA.TOPPINGS[k].name, available: true }; });
+    d.honey = {};
+    (DA.HONEY_ORDER || []).forEach(function (k) {
+      var sz = {}; DA.honeySizes(k).forEach(function (z) { sz[z] = { price: DA.HONEY[k].prices[z], available: true }; });
+      d.honey[k] = { name: DA.HONEY[k].name, available: true, sizes: sz };
+    });
     return d;
   })();
   var settings = JSON.parse(JSON.stringify(DEFAULTS)), settingsSource = 'default';
@@ -123,6 +154,16 @@
       if (typeof t.name === 'string' && t.name) out.toppings[k].name = t.name;
       if (typeof t.available === 'boolean') out.toppings[k].available = t.available;
     });
+    if (s && s.honey) Object.keys(out.honey).forEach(function (k) {
+      var h = s.honey[k]; if (!h) return;
+      if (typeof h.name === 'string' && h.name) out.honey[k].name = h.name;
+      if (typeof h.available === 'boolean') out.honey[k].available = h.available;
+      Object.keys(out.honey[k].sizes).forEach(function (z) {
+        var v = h.sizes && h.sizes[z]; if (!v) return;
+        if (typeof v.price === 'number' && v.price >= 0) out.honey[k].sizes[z].price = Math.round(v.price);
+        if (typeof v.available === 'boolean') out.honey[k].sizes[z].available = v.available;
+      });
+    });
     return out;
   }
   function applySettings(s) {
@@ -131,6 +172,16 @@
       var P = DA.PACKAGES[k]; P.price = s.packages[k].price; P.name = s.packages[k].name; P.available = s.packages[k].available;
     });
     DA.ORDER.forEach(function (k) { DA.TOPPINGS[k].name = s.toppings[k].name; DA.TOPPINGS[k].available = s.toppings[k].available; });
+    Object.keys(s.honey || {}).forEach(function (k) {
+      var H = DA.HONEY[k]; if (!H) return;
+      H.name = s.honey[k].name; H.available = s.honey[k].available; H.sizeAvail = {};
+      Object.keys(s.honey[k].sizes).forEach(function (z) { H.prices[z] = s.honey[k].sizes[z].price; H.sizeAvail[z] = s.honey[k].sizes[z].available; });
+    });
+  }
+  // madu bisa dibeli? (varian & ukuran tersedia)
+  function honeyAvailable(key, size) {
+    var H = DA.HONEY[key]; if (!H || H.available === false) return false;
+    return size ? !(H.sizeAvail && H.sizeAvail[size] === false) : true;
   }
   function loadSettings() {
     if (!window.FB) return Promise.resolve(false);
@@ -235,7 +286,8 @@
 
   window.Store = {
     fmt: fmt, fmtK: fmtK, itemLabel: itemLabel, itemDetail: itemDetail, itemPrice: itemPrice,
-    total: total, totalPcs: totalPcs, totalBox: totalBox,
+    total: total, totalPcs: totalPcs, totalBox: totalBox, totalBottles: totalBottles, summary: summary,
+    isHoney: isHoney, honeyAvailable: honeyAvailable, unitPrice: unitPrice, itemTitle: itemTitle, itemShort: itemShort, itemChip: itemChip, itemArt: itemArt,
     encode: encode, decode: decode, reviewLink: reviewLink, waText: waText, waLink: waLink, newId: newId,
     lsGet: lsGet, lsSet: lsSet, LS_CART: LS_CART,
     ready: ready, cloudOn: cloudOn,
